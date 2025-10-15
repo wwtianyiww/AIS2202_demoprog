@@ -1,0 +1,175 @@
+#include <Arduino.h>
+#include <Wire.h>
+
+// I2C pins - same as your config
+const int shoulderMotorSDAPin = 21;
+const int shoulderMotorSCLPin = 22;
+const int wristMotorSDAPin = 16;
+const int wristMotorSCLPin = 17;
+
+// AS5600 standard address
+static constexpr uint8_t AS5600_ADDR = 0x36;
+
+// AS5600 Registers
+static constexpr uint8_t REG_STATUS = 0x0B;
+static constexpr uint8_t REG_RAW_ANGLE_HIGH = 0x0C;
+static constexpr uint8_t REG_ANGLE_HIGH = 0x0E;
+
+// USE GLOBAL Wire and Wire1 (don't create new ones!)
+
+// Scan I2C bus for devices
+void scanI2CBus(TwoWire& bus, const char* busName) {
+  Serial.printf("\n=== Scanning %s ===\n", busName);
+
+  int devicesFound = 0;
+  for (uint8_t addr = 1; addr < 127; addr++) {
+    bus.beginTransmission(addr);
+    if (bus.endTransmission() == 0) {
+      Serial.printf("✓ Device found at 0x%02X", addr);
+      if (addr == 0x36) Serial.print(" (AS5600!)");
+      Serial.println();
+      devicesFound++;
+    }
+    delay(1);
+  }
+
+  if (devicesFound == 0) {
+    Serial.println("✗ No I2C devices found!");
+  }
+  Serial.printf("Total devices: %d\n", devicesFound);
+}
+
+// Read status register
+uint8_t readStatus(TwoWire& bus) {
+  bus.beginTransmission(AS5600_ADDR);
+  bus.write(REG_STATUS);
+  if (bus.endTransmission() != 0) return 0xFF;
+
+  if (bus.requestFrom((int)AS5600_ADDR, 1) != 1) return 0xFF;
+  return bus.read();
+}
+
+// Read raw angle (12-bit)
+bool readRawAngle(TwoWire& bus, uint16_t &raw) {
+  bus.beginTransmission(AS5600_ADDR);
+  bus.write(REG_RAW_ANGLE_HIGH);
+  if (bus.endTransmission() != 0) return false;
+
+  if (bus.requestFrom((int)AS5600_ADDR, 2) != 2) return false;
+
+  uint16_t hi = bus.read();
+  uint16_t lo = bus.read();
+  raw = ((hi << 8) | lo) & 0x0FFF;
+  return true;
+}
+
+// Read filtered angle (12-bit) - matches your working code at 0x0E
+bool readAngle(TwoWire& bus, uint16_t &raw) {
+  bus.beginTransmission(AS5600_ADDR);
+  bus.write(REG_ANGLE_HIGH);  // 0x0E
+  if (bus.endTransmission() != 0) return false;
+
+  if (bus.requestFrom((int)AS5600_ADDR, 2) != 2) return false;
+
+  uint16_t hi = bus.read();
+  uint16_t lo = bus.read();
+  raw = ((hi << 8) | lo) & 0x0FFF;
+  return true;
+}
+
+void printStatus(const char* name, uint8_t status) {
+  Serial.printf("%s Status: 0x%02X ", name, status);
+
+  if (status == 0xFF) {
+    Serial.println("- I2C COMMUNICATION FAILED!");
+    return;
+  }
+
+  bool magnetDetected = (status & 0x20);
+  bool magnetTooWeak = (status & 0x10);
+  bool magnetTooStrong = (status & 0x08);
+
+  if (magnetDetected) Serial.print("[✓ Magnet OK] ");
+  if (magnetTooWeak) Serial.print("[⚠ TOO WEAK] ");
+  if (magnetTooStrong) Serial.print("[⚠ TOO STRONG] ");
+  if (!magnetDetected && !magnetTooWeak && !magnetTooStrong) {
+    Serial.print("[✗ NO MAGNET DETECTED] ");
+  }
+  Serial.println();
+}
+
+void setup() {
+  Serial.begin(9600);
+  delay(500);
+
+  Serial.println("\n========================================");
+  Serial.println("    AS5600 SENSOR DIAGNOSTIC TEST");
+  Serial.println("========================================\n");
+
+  // Initialize I2C buses - EXACTLY like your working code
+  Wire.begin(shoulderMotorSDAPin, shoulderMotorSCLPin);
+  Wire1.begin(wristMotorSDAPin, wristMotorSCLPin);
+  Wire.setClock(100000);
+  Wire.setTimeOut(50);
+  Wire1.setClock(100000);
+  Wire1.setTimeOut(50);
+
+  Serial.println("I2C Buses Initialized");
+  Serial.println("- Shoulder (Wire):  SDA=" + String(shoulderMotorSDAPin) + ", SCL=" + String(shoulderMotorSCLPin));
+  Serial.println("- Wrist (Wire1):    SDA=" + String(wristMotorSDAPin) + ", SCL=" + String(wristMotorSCLPin));
+
+  delay(100);
+
+  // SCAN I2C BUSES
+  scanI2CBus(Wire, "Shoulder Bus (Wire - GPIO 21/22)");
+  scanI2CBus(Wire1, "Wrist Bus (Wire1 - GPIO 16/17)");
+
+  Serial.println("\n=== INITIAL MAGNET DETECTION CHECK ===");
+  uint8_t shoulderStatus = readStatus(Wire);
+  uint8_t wristStatus = readStatus(Wire1);
+
+  printStatus("Shoulder", shoulderStatus);
+  printStatus("Wrist   ", wristStatus);
+  Serial.println();
+
+  Serial.println("=== STARTING CONTINUOUS READING ===");
+  Serial.println("Rotate each motor manually to verify readings change");
+  Serial.println("Format: [Sensor] Raw | Angle | Degrees");
+  Serial.println();
+}
+
+void loop() {
+  uint16_t shoulderRaw = 0, shoulderAngle = 0;
+  uint16_t wristRaw = 0, wristAngle = 0;
+
+  bool shoulderRawOK = readRawAngle(Wire, shoulderRaw);
+  bool shoulderAngleOK = readAngle(Wire, shoulderAngle);
+
+  bool wristRawOK = readRawAngle(Wire1, wristRaw);
+  bool wristAngleOK = readAngle(Wire1, wristAngle);
+  
+  // Convert to degrees
+  float shoulderDeg = shoulderAngle * (360.0f / 4096.0f);
+  float wristDeg = wristAngle * (360.0f / 4096.0f);
+  
+  // Print results
+  Serial.print("Shoulder: ");
+  if (shoulderRawOK && shoulderAngleOK) {
+    Serial.printf("Raw=%4u | Ang=%4u | %6.2f° ", 
+                  shoulderRaw, shoulderAngle, shoulderDeg);
+  } else {
+    Serial.print("*** READ FAILED *** ");
+  }
+  
+  Serial.print(" | Wrist: ");
+  if (wristRawOK && wristAngleOK) {
+    Serial.printf("Raw=%4u | Ang=%4u | %6.2f°", 
+                  wristRaw, wristAngle, wristDeg);
+  } else {
+    Serial.print("*** READ FAILED ***");
+  }
+  
+  Serial.println();
+  
+  delay(200);  // 5Hz update rate for easy reading
+}
