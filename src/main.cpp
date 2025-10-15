@@ -32,13 +32,11 @@ using namespace Constants;
 void printStatus();
 void handleSerialCommand();
 
-// ==================== I2C Buses ====================
-//TwoWire shoulderI2C(0);
-//TwoWire wristI2C(1);
+bool motorsEnabled = true;
 
 // ==================== Shoulder Joint ====================
 Motor shoulderMotor(shoulderINA1, shoulderINA2, shoulderPWMA);
-AS5600Sensor shoulderAngleSensor(Wire);
+AS5600Sensor shoulderAngleSensor(Wire, 2.2f);
 CurrentSensor shoulderCurrentSensor(shoulderCurrentSensorPin, currentSensitivity);
 Joint shoulderJoint(shoulderMotor, shoulderAngleSensor, shoulderCurrentSensor);
 PIDController shoulderPID(shoulderKp, shoulderKi, shoulderKd, shoulderMaxIntegral);
@@ -115,8 +113,8 @@ void setup() {
 void loop() {
     uint32_t currentTime = millis();
 
-    // Control loop (100Hz)
-    if (currentTime - lastUpdateTime >= controlLoopInterval) {
+    // Control loop (100Hz) - only run if motors enabled
+    if (motorsEnabled && currentTime - lastUpdateTime >= controlLoopInterval) {
         float dt = (currentTime - lastUpdateTime) / 1000.0f;
         lastUpdateTime = currentTime;
 
@@ -163,6 +161,26 @@ void handleSerialCommand() {
         case 'p':
         case 'P':
             robot.printStatus();
+            break;
+        case 'm':  // NEW: Motor toggle
+        case 'M':
+            motorsEnabled = !motorsEnabled;
+            if (!motorsEnabled) {
+                shoulderJoint.stop();
+                wristJoint.stop();
+                Serial.println("\n*** MOTORS DISABLED ***");
+                Serial.println("You can now move joints manually by hand");
+                Serial.println("Send 'm' again to re-enable motors\n");
+            } else {
+                Serial.println("\n*** MOTORS ENABLED ***\n");
+            }
+            break;
+        case 'c':
+        case 'C':
+            Serial.print("Calibrating for zero position");
+            shoulderAngleSensor.calibrateZero();
+            wristAngleSensor.calibrateZero();
+            Serial.println("Calibration complete! Current position is now 0°");
             break;
         default:
             Serial.println("Unknown command");
