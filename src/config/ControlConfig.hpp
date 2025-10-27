@@ -16,8 +16,8 @@ namespace ControlConfig {
     constexpr float wristMaxIntegral = 200.0f;
 
     // Deadband thresholds (degrees)
-    constexpr float shoulderDeadbandThreshold = 1.0f;
-    constexpr float wristDeadbandThreshold = 1.0f;
+    constexpr float shoulderDeadbandThreshold = 0.2f;
+    constexpr float wristDeadbandThreshold = 0.2f;
 
 }
 

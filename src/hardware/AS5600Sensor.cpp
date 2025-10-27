@@ -14,7 +14,7 @@ AS5600Sensor::~AS5600Sensor() {
 bool AS5600Sensor::initialize() {
     // Construct the AS5600 object
     sensor_ = new AS5600(&wire_);
-    sensor_->setOffset(offset_);
+
 
     Serial.println("[DEBUG] AS5600 object created");
 
@@ -22,11 +22,18 @@ bool AS5600Sensor::initialize() {
     sensor_->begin();
     Serial.println("[DEBUG] sensor_->begin() called");
 
+
     if (!sensor_->isConnected()) {
         Serial.println("[DEBUG] sensor_ NOT connected!");
         return false;
     }
     Serial.println("[DEBUG] sensor_ is connected");
+
+    if (!sensor_->setOffset(offset_)) {
+        Serial.printf("[WARNING] Failed to set offset: %.2f degrees\n", offset_);
+    } else {
+        Serial.printf("[DEBUG] Offset set to: %.2f degrees\n", offset_);
+    }
 
     int magStatus = getMagnetStatus();
     Serial.printf("[DEBUG] Magnet status: %d\n", magStatus);

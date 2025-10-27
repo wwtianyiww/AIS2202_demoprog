@@ -36,7 +36,7 @@ bool motorsEnabled = true;
 
 // ==================== Shoulder Joint ====================
 Motor shoulderMotor(shoulderINA1, shoulderINA2, shoulderPWMA);
-AS5600Sensor shoulderAngleSensor(Wire, 0.0f, 45.0f);
+AS5600Sensor shoulderAngleSensor(Wire, 1.0f, 23.0f);
 CurrentSensor shoulderCurrentSensor(shoulderCurrentSensorPin, currentSensitivity);
 Joint shoulderJoint(shoulderMotor, shoulderAngleSensor, shoulderCurrentSensor);
 PIDController shoulderPID(shoulderKp, shoulderKi, shoulderKd, shoulderMaxIntegral);
