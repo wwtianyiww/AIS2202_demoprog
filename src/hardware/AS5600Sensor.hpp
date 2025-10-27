@@ -5,7 +5,7 @@
 
 class AS5600Sensor {
 public:
-    AS5600Sensor(TwoWire& wire, float gearRatio = 1.0f);
+    AS5600Sensor(TwoWire& wire, float gearRatio = 1.0f, float offset = 0.0f);
     ~AS5600Sensor();  // Add destructor
     bool initialize();
     bool readAngle();
@@ -28,5 +28,6 @@ private:
     float encoderDegrees_;
     float gearRatio_;
     float degrees_;
+    float offset_;
 };
 #endif //DEMOPROG1_AS5600SENSOR_HPP

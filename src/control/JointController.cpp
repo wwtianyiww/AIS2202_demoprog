@@ -31,6 +31,11 @@ float JointController::getAngle() {
     return joint_.getAngle();
 }
 
+uint16_t JointController::getRawAngle() {
+    return joint_.getRawAngle();
+}
+
+
 float JointController::getError() {
     float currentAngle = joint_.getAngle();
     return AngleMath::angleError(targetAngle_, currentAngle);

@@ -20,6 +20,11 @@ public:
     float getWristError();
     float getShoulderCurrent();
     float getWristCurrent();
+
+    uint16_t getRawShoulder();
+
+    uint16_t getRawWrist();
+
     void printStatus();
 
 private:

@@ -7,8 +7,8 @@ public:
     explicit StateMonitor(long baudRate = 9600);
     void initialize();
     void logJointState(const char* name, float angle, float error, float current);
-    void logBothJoints(float shoulderAngle, float shoulderError, float shoulderCurrent,
-                      float wristAngle, float wristError, float wristCurrent);
+    void logBothJoints(float shoulderAngle, uint16_t rawShoulder, float shoulderError, float shoulderCurrent,
+                      float wristAngle, uint16_t rawWrist, float wristError, float wristCurrent);
     void logError(const char* message);
     void setVerbose(bool verbose);
 private:

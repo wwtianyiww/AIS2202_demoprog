@@ -9,6 +9,7 @@ public:
     Joint(Motor& motor, AS5600Sensor& sensor, CurrentSensor& current);
     void initialize();
     float getAngle();
+    uint16_t getRawAngle();
     float getCurrent();
     void drive(float controlSignal, int pwmDuty = 50);
     void stop();

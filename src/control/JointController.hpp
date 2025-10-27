@@ -10,6 +10,7 @@ public:
     void setTarget(float targetAngle);
     void update(float dt);
     float getAngle();
+    uint16_t getRawAngle();
     float getError();
     float getCurrent();
 private:

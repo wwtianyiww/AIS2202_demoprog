@@ -1,7 +1,8 @@
 #include "AS5600Sensor.hpp"
+#include "AS5600Sensor.hpp"
 
-AS5600Sensor::AS5600Sensor(TwoWire& wire, float gearRatio)
-    : wire_(wire), sensor_(nullptr), lastRaw_(0), encoderDegrees_(0.0f), gearRatio_(gearRatio), degrees_(0.0f) {
+AS5600Sensor::AS5600Sensor(TwoWire& wire, float gearRatio, float offset)
+    : wire_(wire), sensor_(nullptr), lastRaw_(0), encoderDegrees_(0.0f), gearRatio_(gearRatio), degrees_(0.0f), offset_(offset){
 }
 
 AS5600Sensor::~AS5600Sensor() {
@@ -13,6 +14,7 @@ AS5600Sensor::~AS5600Sensor() {
 bool AS5600Sensor::initialize() {
     // Construct the AS5600 object
     sensor_ = new AS5600(&wire_);
+    sensor_->setOffset(offset_);
 
     Serial.println("[DEBUG] AS5600 object created");
 
@@ -31,18 +33,19 @@ bool AS5600Sensor::initialize() {
 
     return readAngle();
 }
+
+
 bool AS5600Sensor::readAngle() {
     if (sensor_ == nullptr) {
         return false;
     }
 
-    int rawFromLibrary = sensor_->readAngle();
+    lastRaw_ = sensor_->readAngle();
 
-    if (rawFromLibrary < 0) {
+    if (sensor_->lastError() != AS5600_OK) {
         return false;
     }
 
-    lastRaw_ = static_cast<uint16_t>(rawFromLibrary);
     encoderDegrees_ = AngleMath::rawToDegrees(lastRaw_);
     degrees_ = encoderDegrees_/ gearRatio_;
     return true;  // Clean and fast!

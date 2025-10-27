@@ -15,12 +15,12 @@ void RobotArm::initialize() {
     // Joint controllers are already initialized through their hardware components
     // Just verify they're ready
     monitor_.logJointState("Shoulder Init", 
-        shoulderController_.getAngle(), 
+        shoulderController_.getAngle(),
         shoulderController_.getError(),
         shoulderController_.getCurrent());
     
     monitor_.logJointState("Wrist Init", 
-        wristController_.getAngle(), 
+        wristController_.getAngle(),
         wristController_.getError(),
         wristController_.getCurrent());
     
@@ -78,7 +78,7 @@ float RobotArm::getShoulderError() {
 }
 
 float RobotArm::getWristError() {
-    return shoulderController_.getError();
+    return wristController_.getError();
 }
 
 float RobotArm::getShoulderCurrent() {
@@ -89,12 +89,23 @@ float RobotArm::getWristCurrent() {
     return wristController_.getCurrent();
 }
 
+uint16_t RobotArm::getRawShoulder() {
+    return shoulderController_.getRawAngle();
+}
+
+uint16_t RobotArm::getRawWrist() {
+    return wristController_.getRawAngle();
+}
+
+
 void RobotArm::printStatus() {
     monitor_.logBothJoints(
         getShoulderAngle(),
+        getRawShoulder(),
         getShoulderError(),
         getShoulderCurrent(),
         getWristAngle(),
+        getRawWrist(),
         getWristError(),
         getWristCurrent()
     );

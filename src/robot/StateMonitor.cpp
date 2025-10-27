@@ -28,15 +28,17 @@ void StateMonitor::logJointState(const char* name, float angle, float error, flo
     Serial.println(" mA)");
 }
 
-void StateMonitor::logBothJoints(float shoulderAngle, float shoulderError, float shoulderCurrent,
-                                 float wristAngle, float wristError, float wristCurrent) {
+void StateMonitor::logBothJoints(float shoulderAngle, uint16_t rawShoulder, float shoulderError, float shoulderCurrent,
+                                 float wristAngle,uint16_t rawWrist , float wristError, float wristCurrent) {
     if (verbose_) {
         Serial.println("--- Joint Status ---");
     }
 
     Serial.print("Shoulder: ");
     Serial.print(shoulderAngle, 2);
-    Serial.print("° (err: ");
+    Serial.print("° rawangle: ");
+    Serial.print(rawShoulder);
+    Serial.print(" (err: ");
     Serial.print(shoulderError, 2);
     Serial.print("°, I: ");
     Serial.print(shoulderCurrent, 1);
@@ -44,7 +46,9 @@ void StateMonitor::logBothJoints(float shoulderAngle, float shoulderError, float
 
     Serial.print("Wrist: ");
     Serial.print(wristAngle, 2);
-    Serial.print("° (err: ");
+    Serial.print("° rawangle: ");
+    Serial.print(rawWrist);
+    Serial.print(" (err: ");
     Serial.print(wristError, 2);
     Serial.print("°, I: ");
     Serial.print(wristCurrent, 1);

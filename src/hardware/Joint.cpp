@@ -13,9 +13,13 @@ void Joint::initialize() {
 
 //-------------flag
 float Joint::getAngle() {
-    sensor_.readAngle();
+     sensor_.readAngle();
     return sensor_.getDegrees();
 }
+
+uint16_t Joint::getRawAngle() {
+    return sensor_.getRawValue();
+};
 
 float Joint::getCurrent() {
     return current_.readCurrent();
